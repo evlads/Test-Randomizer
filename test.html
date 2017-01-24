@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Tests</title>
+    <link rel="stylesheet" href="http://www.w3schools.com/lib/w3.css">
+    <style type="text/css">
+        #testQuantity,
+        #variantsQuantity {
+            display: block;
+            margin-bottom: 1em;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .quastion {
+            font-weight: bold;
+        }
+        /*         .input-btn {display:inline-block; margin-bottom: 1em;} */
+        
+        .w3-border {
+            margin-bottom: 1em;
+        }
+        
+        .red {
+            color: red;
+        }
+        
+        .bracket {
+            counter-reset: myCounter;
+            list-style: none;
+            font-weight: normal;
+        }
+        
+        .bracket>li::before {
+            content: counter( myCounter) ') ';
+            counter-increment: myCounter;
+        }
+        
+        .center {
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .no-answer {
+            background-color: red;
+        }
+        
+        .custom-answer {
+            background-color: yellow;
+        }
+    </style>
+</head>
+
+<body class="w3-container">
+    <h1>Розподіл тестів за варіантами</h1>
+    <ol>
+        <li>Оберіть файл з тестами (для перевірки test2.txt).</li>
+        <li>Перевірте правильність розпізнання тестів.</li>
+        <li>В кінці сторінки з тестами необхідно ввести кількість тестів для випадкового вибору та кількість тестових питань.</li>
+        <li>Натисність на кнопку "Вибрати випадкові тести".</li>
+    </ol>
+    <label class="input-btn">
+        <span class="w3-btn w3-white w3-border w3-border-blue w3-round">Обрати файл з базою тестів</span>
+        <input type="file" id="fileInput" name="file" class="hidden"/>
+    </label>
+    <a href="#testVariantsSpan" class="w3-btn w3-white w3-border w3-border-blue w3-round">Вниз</a>
+    <div class="w3-border w3-round-xlarge">
+        <h3 class="w3-center"><b>База тестів</b></h3>
+        <div id="fileOutput" class="w3-container"></div>
+    </div>
+    <span id="testVariantsSpan">Кількість варіантів</span>
+    <input type="number" id="variantsQuantity" name="quantity" min="5" value="30">
+    <span>Кількість тестів</span>
+    <input type="number" id="testQuantity" name="quantity" min="5" value="50">
+    <label class="input-btn">
+        <div id="testBtn" class="w3-btn w3-white w3-border w3-border-blue w3-round w3-disabled">Вибрати випадкові тести</div>
+        <input type="button" id="test" class="hidden" disabled/>
+    </label>
+    <div class="w3-border w3-border-indigo w3-round-xlarge">
+        <h3 class="w3-center"><b>Випадкові тести</b></h3>
+        <div id="randTest" class="w3-container"></div>
+    </div>
+    <div class="w3-border w3-border-green w3-round-xlarge">
+        <h3 class="w3-center"><b>Ключі до тестів</b></h3>
+        <div id="testKeys" class="w3-container w3-margin-bottom"></div>
+    </div>
+
+    <script>
+
+        var testQuastion = {
+            quastion: "",
+            answers: [],
+            right: 100
+            },
+            testBase = [testQuastion];
+
+
+        // Check for the File API support.
+        function isFileApi() {
+
+            if (window.File && window.FileReader && window.FileList && window.Blob) {
+            } else {
+                alert('File API не підтримується цим браузером');
+            }
+        }
+
+        // Obtain input file through DOM
+        function readMyFile(evt) {
+
+            var file = evt.target.files[0],
+                reader = new FileReader();
+
+
+            reader.readAsText(file, "UTF-8");
+            reader.onload = draftTestOutput;
+        }
+
+        // Output DraftTest
+        function draftTestOutput(evt) {
+
+            function makeTestBase(evt) {
+
+                var testString = evt.target.result,
+                    draftkeyArray = testString.split('\n'),
+                    draftkeyArrayLength = draftkeyArray.length,
+                    index = 0,
+                    breakStr = String.fromCharCode(13),
+                    answer = 0,
+                    noAnswer = true;
+
+
+                for (var i = 0; i < draftkeyArrayLength; i++) {
+                    testQuastion.quastion = draftkeyArray[i];
+                    i++;
+                    answer = 1;
+                    while (draftkeyArray[i] != breakStr && draftkeyArray[i] != undefined) {
+                        if (draftkeyArray[i].charAt(0) == "#") {
+                            testQuastion.right = answer;
+                            testQuastion.answers[answer - 1] = draftkeyArray[i].substring(1); // substring(1)
+                            answer++;
+                            i++;
+                            noAnswer = false;
+                        } else {
+                            testQuastion.answers[answer - 1] = draftkeyArray[i];
+                            answer++;
+                            i++;
+                        };
+                    }
+
+                    testBase[index] = testQuastion;
+                    index++;
+                    testQuastion = {
+                        quastion: "",
+                        answers: [],
+                        right: 100
+                    };
+
+                };
+             }  //function makeTestBase
+
+            function displayTestBase() {
+
+                var testBaseLength = testBase.length,
+                    outputText = document.getElementById("fileOutput"),
+                    content = "<ol>",
+                    answersNumber = 0;
+
+
+                    for (var i = 0; i < testBaseLength; i++) {
+                        content += "<li class=\"quastion\">" + testBase[i].quastion + "<ol class=\"bracket\">";
+
+                        // debugger;
+
+                        // Is no right answer
+                        if (testBase[i].right == 100) {
+                            content += "<li class=\"no-answer\">Відсутня вірна відповідь</li>"
+                        }
+
+                        answersNumber = testBase[i].answers.length;
+
+                        // Check for non-standard number of responses
+                        if (answersNumber != 4) {
+                            content += "<li class=\"custom-answer\">Кількість відповідей не дорівнює 4</li>"
+                        }
+
+                        for (var j = 0; j < answersNumber; j++) {
+                            if (j == testBase[i].right - 1) {
+                                content += "<li class=\"red\">" + testBase[i].answers[j] + "</li>"
+                            } else {
+                                content += "<li>" + testBase[i].answers[j] + "</li>"
+                            }
+                        }
+                        content += "</ol></li></br>" //</br>
+                    }
+                    content += "</ol>"
+                    outputText.innerHTML = content;
+            } //function displayTestBase
+
+            makeTestBase(evt);
+            displayTestBase();
+            document.getElementById("test").removeAttribute("disabled");
+            document.getElementById("testBtn").classList.remove("w3-disabled");
+        } //function draftTestOutput
+
+        function severalRandom(min, max, num) {
+            var i, arr = [],
+                res = [];
+
+
+            for (i = min; i <= max; i++) arr.push(i);
+            for (i = 0; i < num; i++) res.push(arr.splice(Math.floor(Math.random() * (arr.length)), 1)[0])
+            return res;
+        }
+
+        function changeTest() {
+            var keyArr = [],  keyArr_L = 0,
+                testArr = [], testArr_L = 0,
+                answersArr_L = 0,
+                keyArr_L = 0,
+                testQuastion = [],
+                testContent = "",
+                keyContent = "",
+                variantsQuantity = document.getElementById("variantsQuantity").value,
+                testQuantity = document.getElementById("testQuantity").value,
+                max = testBase.length,
+                maxTestQuantity = (testQuantity > max) ? max : testQuantity,
+                rndTestOutput = document.getElementById("randTest"),
+                testKeyOutput = document.getElementById("testKeys");
+                
+
+            for (var n = 0; n < variantsQuantity; n++) {
+                testContent += "<h3 class=\"center\">" + "Варіант № " + (n + 1) + "</h3>";
+
+                testArr = severalRandom(0, max - 1, maxTestQuantity);
+                testArr_L = testArr.length;
+
+                for (var i = 0; i < testArr_L; i++) {
+                    testQuastion = testArr[i];
+                    testContent += "<p class=\"quastion\">" + (i + 1) + ". " + testBase[testQuastion].quastion + "</p>";
+                    answersArr_L = testBase[testQuastion].answers.length;
+                    for (var j = 0; j < answersArr_L; j++) {
+                        if (j == testBase[testQuastion].right - 1) {
+                            testContent += "<p class=\"red\">" + (j + 1) + ") " + testBase[testQuastion].answers[j] + "</p>";
+                            keyArr[i] = testBase[testQuastion].right;
+                        } else {
+                            testContent += "<p>" + (j + 1) + ") " + testBase[testQuastion].answers[j] + "</p>"
+                        }
+                    }
+                    testContent += "<p>&nbsp</p>" //</br>
+                }
+
+                rndTestOutput.innerHTML = testContent;
+
+                keyArr_L = keyArr.length;               
+                keyContent += "<h3 class=\"center\">" + "Відповіді до варіанта № " + (n + 1) + "</h3>";
+
+                for (i = 0; i < keyArr_L - 1; i++) {
+                    keyContent += i + 1 + " - " + keyArr[i] + ",&nbsp&nbsp";
+                }
+
+                keyContent += i + 1 + " - " + keyArr[i] + ".";
+
+                testKeyOutput.innerHTML = keyContent;
+            }
+        }
+
+        isFileApi();
+        document.getElementById('fileInput').addEventListener('change', readMyFile, false);
+        document.getElementById('test').addEventListener('click', changeTest, false);
+    </script>
+</body>
+
+</html>
